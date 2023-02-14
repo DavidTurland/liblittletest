@@ -36,6 +36,34 @@
 #define CHECK 1
 #define ASSERT 2
 
+struct SharedSuiteBase{
+        virtual void setup(){ 
+           std::cout << "SharedSuiteBase::setup "<< std::endl; 
+        }
+        virtual void teardown(){ 
+           std::cout << "SharedSuiteBase::teardown "<< std::endl; 
+        }
+};
+
+template<typename T>
+struct SharedSuite : public SharedSuiteBase{
+    SharedSuite():is_setup(false),torn_down(false){
+    }
+    void setup(){
+        std::cerr << "templ SharedSuite set_up : " << is_setup << std::endl;
+        is_setup = true;
+
+    }
+
+    void teardown(){
+        std::cout << "templ SharedSuite tear_down: " << torn_down << std::endl;
+        torn_down = true;
+
+    }
+    bool is_setup;
+    bool torn_down;
+};
+
 #define LT_BEGIN_TEST_ENV() int main() {
 
 #define LT_END_TEST_ENV() }
@@ -58,7 +86,9 @@
 
 #define LT_RUNNER(__lt_runner_name__) __lt_runner_name__
 
-#define LT_BEGIN_SUITE(__lt_name__) \
+#define LT_BEGIN_SUITE(__lt_name__)                            \
+    struct __lt_name__ ;                                       \
+    static inline SharedSuite<__lt_name__> static ## __lt_name__ ## Shared{}; \
     struct __lt_name__ : public littletest::suite<__lt_name__> \
     {
 
@@ -83,7 +113,12 @@
     }; \
     __lt_test_name__ ## _class __lt_test_name__; \
 
-#define LT_BEGIN_AUTO_TEST(__lt_suite_name__, __lt_test_name__) LT_BEGIN_TEST(__lt_suite_name__, __lt_test_name__)
+#define LT_SETUP_SHARED_SUITE(__lt_suite_name__) 
+
+
+#define LT_BEGIN_AUTO_TEST(__lt_suite_name__, __lt_test_name__) \
+        LT_SETUP_SHARED_SUITE(__lt_suite_name__)                \
+        LT_BEGIN_TEST(__lt_suite_name__, __lt_test_name__)
 
 #define LT_END_AUTO_TEST(__lt_test_name__) \
     LT_END_TEST(__lt_test_name__) \
